@@ -40,16 +40,27 @@ public class FilterTaskAuth extends OncePerRequestFilter {
 
                 var user = this.userRepository.findByUsername(username);
 
-                if (user == null || !BCrypt.verifyer().verify(password.toCharArray(), user.getPassword()).verified) {
+                // Valida o usuário
+                if (user == null) {
                     response.sendError(401);
-                    return; // Encerrar o filtro
-                }
-            } else {
-                response.sendError(401); // Se não houver credenciais, envie erro 401
-                return; // Encerrar o filtro
-            }
-        }
+                    return; // Encerra o filtro
+                } else {
 
-        filterChain.doFilter(request, response);
+                    //valida senha
+
+                    var passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
+                    if (passwordVerify.verified) {
+
+                        request.setAttribute("idUser", user.getId());
+                        filterChain.doFilter(request, response);
+                    } else {
+                        response.sendError(401);
+                    }
+                }
+            }
+
+        } else {
+            filterChain.doFilter(request, response);
+        }
     }
 }

@@ -1,6 +1,5 @@
 package br.com.antonio.todolist.filter;
 
-
 import java.io.IOException;
 import java.util.Base64;
 
@@ -15,10 +14,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-
-
 @Component
-public class FilterTaskAuth extends OncePerRequestFilter{
+public class FilterTaskAuth extends OncePerRequestFilter {
 
     @Autowired
     private IUserRepository userRepository;
@@ -27,44 +24,32 @@ public class FilterTaskAuth extends OncePerRequestFilter{
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-                //pega senha e user
+        var servletPath = request.getServletPath();
 
-                 var authorization = request.getHeader("Authorization");
-                if(authorization != null) {
+        if (servletPath.equals("/tasks/")) {
+            var authorization = request.getHeader("Authorization");
 
-                    var authEncoded = authorization.substring("Basic".length()).trim();
+            if (authorization != null) {
+                var authEncoded = authorization.substring("Basic".length()).trim();
+                byte[] authDecode = Base64.getDecoder().decode(authEncoded);
+                var authString = new String(authDecode);
 
-                    byte[] authDecode = Base64.getDecoder().decode(authEncoded);
+                String[] credentials = authString.split(":");
+                String username = credentials[0];
+                String password = credentials[1];
 
-                    var authString = new String(authDecode);
-                    System.out.println("String");
-                    System.out.println(authString);
+                var user = this.userRepository.findByUsername(username);
 
-                    String[] credentials = authString.split(":");
-                    String username = credentials[0];
-                    String password = credentials[1];
-
-                    var user = this.userRepository.findByUsername(username);
-                    if(user == null) {
-                        response.sendError(401);
-                    } else {
-                        var passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
-                        if(passwordVerify.verified) {
-                            filterChain.doFilter(request, response);
-                        }
-                        response.sendError(401);
-                    }
-
-                   
-
-                   
+                if (user == null || !BCrypt.verifyer().verify(password.toCharArray(), user.getPassword()).verified) {
+                    response.sendError(401);
+                    return; // Encerrar o filtro
                 }
-
-                //validar existencia de user e senha
-        
-              
+            } else {
+                response.sendError(401); // Se não houver credenciais, envie erro 401
+                return; // Encerrar o filtro
             }
+        }
 
-    
-    
+        filterChain.doFilter(request, response);
+    }
 }

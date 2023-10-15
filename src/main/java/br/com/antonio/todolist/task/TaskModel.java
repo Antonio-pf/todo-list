@@ -32,9 +32,4 @@ public class TaskModel {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-  
-   
-
-
-    
 }

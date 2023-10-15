@@ -132,7 +132,6 @@ Authorization: Bearer seu_token_de_autenticacao
 Content-Type: application/json
 
 {
-    "title": "Tarefa atualizada",
-    "completed": true
+    "title": "Tarefa atualizada"
 }
 
